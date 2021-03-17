@@ -1,0 +1,74 @@
+---
+title: "EB_data"
+author: "Ariel Mundo"
+date: "3/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+GAM analysis of EB's DRS data.
+
+```{r, data visualization}
+library(ggplot2)
+library(tidyverse)
+library(mgcv)
+library(ggsci)
+library(gratia)
+dat<-read.csv("GAM data_weeks.csv")
+
+#create new column for the Treatment and Control Groups (for plotting purposes)
+
+
+dat<-dat %>%
+    mutate(General_Group=factor(ifelse(grepl("C",Group),"Control","Treatment")))
+    
+    
+ggplot(data=dat,aes(x=Week, y=StO2))+
+    geom_point(aes(color=General_Group))+
+    labs(y=expression(paste(StO[2],'(%)')))+
+    scale_color_aaas()+
+    theme_classic()+
+    facet_wrap(~General_Group)
+    
+
+
+ggplot(data=dat,aes(x=Week, y=tHb))+
+    geom_point(aes(color=General_Group))+
+    labs(y=expression(paste(tHb,' (mg/mL)')))+
+    scale_color_aaas()+
+    theme_classic()+
+    facet_wrap(~General_Group)
+
+ggplot(data=dat,aes(x=Week, y=HbO2))+
+     geom_point(aes(color=General_Group))+
+    labs(y=expression(paste(HbO[2],' (mg/mL)')))+
+    scale_color_aaas()+
+    theme_classic()+
+    facet_wrap(~General_Group)
+
+ggplot(data=dat,aes(x=Week, y=dHb))+
+     geom_point(aes(color=General_Group))+
+    labs(y=expression(paste(dHb,' (mg/mL)')))+
+    scale_color_aaas()+
+    theme_classic()+
+    facet_wrap(~General_Group)
+
+
+StO2_GAM<-gam(StO2~General_Group+s(Week,by=General_Group,k=7),data=dat)
+
+appraise(StO2_GAM)
+
+tHb_GAM<-gam(tHb~General_Group+s(Week,by=General_Group,k=7),data=dat)
+
+appraise(tHb_GAM)
+
+HbO2_GAM<-gam(HbO2~General_Group+s(Week,by=General_Group,k=7),data=dat)
+appraise(HbO2_GAM)
+
+
+dHb_GAM<-gam(dHb~General_Group+s(Week,by=General_Group,k=7),data=dat)
+appraise(dHb_GAM)
+```
