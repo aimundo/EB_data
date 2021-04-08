@@ -95,7 +95,81 @@ appraise(dHb_GAM)
 
 From the plots above (specifically, the plot for each model) it seems there are different smooths per treatment for StO2, HbO2 and dHb. However, there seems not to be a clear difference for the tHb model. This is somewhat expected based on what we have seen in the tumor model, but also from the initial data scatterplots, there is not a clear difference in the trends of this value over time. The diagnostics for the models of StO2, HbO2 and dHB also look good: the QQ plot shows that the residuals are following a normal distribution and the the residuals vs linear predictor plot show no trend (which is what we want because the residuals should be randomly distributed). 
 
-The final piece of this analysis is to do a comparison between the different smooths for each group for each model. Basically, we will not get a _p-value_ as we would do for an ANOVA analysis, but insted we are going to compare the smooth and its confidence interval for each treatment group for each DRS-derived parameter. We can think about this comparison in the following way: Say you have two treatments and the trend/smooth across time in each treatment is following the same pattern. If you calculate the _difference_ between the smooths it should be near or equal to zero, because the trend is the same. That would mean that the treatments are having a similar effect (which is typically what we don't want). But if in turn we find that the difference is non-zero at some time point, that would mean that the treatment is causing a change in the response, and that is what we want. That is the main idea.
+```{r, plotting smooths and data}
+
+#StO2
+StO2_GAM_pred<-with(dat,expand.grid(StO2=seq(min(StO2),max(StO2),length=400),General_Group=levels(General_Group),Week=Week))
+
+StO2_GAM_pred<-cbind(StO2_GAM_pred,predict(StO2_GAM,StO2_GAM_pred,se.fit = TRUE,type='response'))
+
+#dHb
+dHb_GAM_pred<-with(dat,expand.grid(dHb=seq(min(dHb),max(dHb),length=400),General_Group=levels(General_Group),Week=Week))
+
+dHb_GAM_pred<-cbind(dHb_GAM_pred,predict(dHb_GAM,dHb_GAM_pred,se.fit = TRUE,type='response'))
+
+#HbO2
+
+HbO2_GAM_pred<-with(dat,expand.grid(HbO2=seq(min(HbO2),max(HbO2),length=400),General_Group=levels(General_Group),Week=Week))
+
+HbO2_GAM_pred<-cbind(HbO2_GAM_pred,predict(HbO2_GAM,dHb_GAM_pred,se.fit = TRUE,type='response'))
+
+
+
+#Creating the plots
+txt<-20 #this controls the text size
+
+pr1<-ggplot(data=dat, aes(x=Week, y=StO2, group=General_Group)) +
+  facet_wrap(~General_Group) +
+  geom_point(colour='black',size=1,alpha=0.5)+
+geom_ribbon(aes(ymin=(fit - 2*se.fit), ymax=(fit + 2*se.fit), x=Week),
+            data=StO2_GAM_pred, alpha=0.3, 
+           inherit.aes=FALSE) +
+geom_line(aes(y=fit,color=factor(General_Group)), size=1,data=StO2_GAM_pred,show.legend = FALSE) +
+  theme(text=element_text(size=txt))+
+  #scale_color_manual(values=c(map_colors(15),map_colors(15),map_colors(15)))+
+  scale_x_continuous(breaks=seq(0,8,2))+labs(y=expression(paste(StO[2],'(%)')))
+
+
+
+pr2<-ggplot(data=dat, aes(x=Week, y=dHb, group=General_Group)) +
+  facet_wrap(~General_Group) +
+  geom_point(colour='black',size=1,alpha=0.5)+
+geom_ribbon(aes(ymin=(fit - 2*se.fit), ymax=(fit + 2*se.fit), x=Week),
+            data=dHb_GAM_pred, alpha=0.3, 
+           inherit.aes=FALSE) +
+geom_line(aes(y=fit,color=factor(General_Group)), size=1,data=dHb_GAM_pred,show.legend = FALSE) +
+  theme(text=element_text(size=txt))+
+  #scale_color_manual(values=c(map_colors(15),map_colors(15),map_colors(15)))+
+  scale_x_continuous(breaks=seq(0,8,2))+labs(y='Deoxyhemoglobin (mg/mL)')
+
+#####
+
+
+pr3<-ggplot(data=dat, aes(x=Week, y=HbO2, group=General_Group)) +
+  facet_wrap(~General_Group) +
+  geom_point(colour='black',size=1,alpha=0.5)+
+geom_ribbon(aes(ymin=(fit - 2*se.fit), ymax=(fit + 2*se.fit), x=Week),
+            data=HbO2_GAM_pred, alpha=0.3, 
+           inherit.aes=FALSE) +
+geom_line(aes(y=fit,color=factor(General_Group)), size=1,data=HbO2_GAM_pred,show.legend = FALSE) +
+  theme(text=element_text(size=txt))+
+  #scale_color_manual(values=c(map_colors(15),map_colors(15),map_colors(15)))+
+  scale_x_continuous(breaks=seq(0,8,2))+labs(y='Oxyhemoglobin (mg/mL)')
+
+
+###
+
+#plotting them together
+
+pr1+pr2+pr3+plot_layout(guides="collect")+
+  plot_annotation(
+    tag_levels='A',title = 'Fitted smooths',
+    theme=theme(plot.title = element_text(size=20))
+    )
+
+```
+
+The final piece of this analysis is to do a comparison between the different smooths for each group for each model. Basically, we will not get a _p-value_ as we would do for an ANOVA analysis, but instead we are going to compare the smooth and its confidence interval for each treatment group for each DRS-derived parameter. We can think about this comparison in the following way: Say you have two treatments and the trend/smooth across time in each treatment is following the same pattern. If you calculate the _difference_ between the smooths it should be near or equal to zero, because the trend is the same. That would mean that the treatments are having a similar effect (which is typically what we don't want). But if in turn we find that the difference is non-zero at some time point, that would mean that the treatment is causing a change in the response, and that is what we want. That is the main idea.
 
 To do this comparisons we need to do some additional coding because of how the GAM models are computed in R. We basically create a grid of points that spans 8 weeks and get the information of the models over this grid to calculate the trends. We will also create 95% confidence intervals for the smooths (that is the `r alpha=0.05` line is doing in the code below).
 
