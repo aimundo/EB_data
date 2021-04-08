@@ -95,7 +95,7 @@ appraise(dHb_GAM)
 
 From the plots above (specifically, the plot for each model) it seems there are different smooths per treatment for StO2, HbO2 and dHb. However, there seems not to be a clear difference for the tHb model. This is somewhat expected based on what we have seen in the tumor model, but also from the initial data scatterplots, there is not a clear difference in the trends of this value over time. The diagnostics for the models of StO2, HbO2 and dHB also look good: the QQ plot shows that the residuals are following a normal distribution and the the residuals vs linear predictor plot show no trend (which is what we want because the residuals should be randomly distributed). 
 
-```{r, plotting smooths and data}
+```{r, NEW plotting smooths and data}
 
 #StO2
 StO2_GAM_pred<-with(dat,expand.grid(StO2=seq(min(StO2),max(StO2),length=400),General_Group=levels(General_Group),Week=Week))
